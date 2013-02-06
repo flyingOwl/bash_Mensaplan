@@ -34,7 +34,7 @@ while getopts AEBDSnp:h opt
 done
 fi
 
-mkdir -p "$(basename "$tempFile")"
+mkdir -p "$(dirname "$tempFile")"
 
 if [ -z "$print" ];
 then
