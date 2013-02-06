@@ -2,7 +2,7 @@
 
 webSite="http://www.studentenwerk-berlin.de/mensen/speiseplan/beuth/index.html"
 webNext="http://www.studentenwerk-berlin.de/mensen/speiseplan/beuth/01.html"
-tempFile="/tmp/erik/mensaplan.temp"
+tempFile="/tmp/mensaplan.temp"
 section="Salate\nAktionsstand\nEssen\nBeilagen\nDesserts\nKennzeichnungen"
 print=""
 prPreise="SMF"
@@ -33,6 +33,8 @@ while getopts AEBDSnp:h opt
   	esac
 done
 fi
+
+mkdir -p "$(basename "$tempFile")"
 
 if [ -z "$print" ];
 then
