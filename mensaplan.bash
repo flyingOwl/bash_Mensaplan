@@ -6,6 +6,7 @@ tempFile="/tmp/mensaplan.temp"
 section="Salate\nAktionsstand\nEssen\nBeilagen\nDesserts\nKennzeichnungen"
 print=""
 prPreise="SMF"
+tePreise=""
 TERM_COL=$(tput cols)
 
 if [ $# -ne 0 ] ; then
@@ -17,7 +18,7 @@ while getopts AEBDSnp:h opt
 		B) print=$print":Beilagen";;
 		D) print=$print":Desserts";;
 		S) print=$print":Salate";;
-		p) prPreise=$OPTARG;;
+		p) tePreise=$OPTARG;;
 		n) webSite=$webNext;;
 		h) 	echo -e "Usage:"
 			echo -e "\t[-A Nur Aktionsessen]"
@@ -40,6 +41,15 @@ if [ -z "$print" ];
 then
 	print=$section
 fi
+
+if [ ! -z "$tePreise" ];
+then
+	prPreise=""
+	echo "$tePreise" | grep "S" > /dev/null && prPreise=$prPreise"S"
+	echo "$tePreise" | grep "M" > /dev/null && prPreise=$prPreise"M"
+	echo "$tePreise" | grep "F" > /dev/null && prPreise=$prPreise"F"
+fi
+
 
 numberSection=$(echo -e "$section" | wc -l)
 numberSection=$((numberSection-1))
