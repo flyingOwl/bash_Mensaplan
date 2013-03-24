@@ -94,7 +94,7 @@ do
 	del2=$(echo -e "$section" | awk "NR==$((sec+1))" | tr '\r' ' ' | sed 's/ *$//g')
 	cC=$(echo "$content" | sed -e '1,/'$del1'/d' | sed -e '/'$del2'/,$d')
 
-	texte=$(echo "$cC" | grep -v "EUR" | sed -e 's/[0-9]\+//g' | grep "   ")
+	texte=$(echo "$cC" | grep -v "EUR" | sed -e 's/  \+[0-9]\+//g' | grep "   ")
 	preise=$(echo "$cC" | grep "EUR" | tr -d '/')
 	anzahl=$(echo "$texte" | wc -l)
 	echo "$del1: ($anzahl)"
