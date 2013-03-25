@@ -45,57 +45,59 @@ fi
 if [ ! -z "$tePreise" ];
 then
 	prPreise=""
-	echo "$tePreise" | grep "S" > /dev/null && prPreise=$prPreise"S"
-	echo "$tePreise" | grep "M" > /dev/null && prPreise=$prPreise"M"
-	echo "$tePreise" | grep "F" > /dev/null && prPreise=$prPreise"F"
+	echo "$tePreise" | grep "S" > /dev/null && prPreise+=S
+	echo "$tePreise" | grep "M" > /dev/null && prPreise+=M
+	echo "$tePreise" | grep "F" > /dev/null && prPreise+=F
 fi
 
 
 numberSection=$(echo -e "$section" | wc -l)
-numberSection=$((numberSection-1))
+let numberSection--
 
-BIG_TAB=$((2+6*$(echo "$prPreise" | wc -c)-6))
+let BIG_TAB=2+6*$(echo "$prPreise" | wc -c)-6
 
 printSection(){
 for (( c=1; c<=$anzahl; c++ ))
 	do
-		#echo -n "$c"
-		nowPreis=$(echo "$1" | awk "NR==$c" | tr '\r' ' ' | sed 's/ *$//g')
-		studPreis=$(echo "$nowPreis"  | awk '{ if ( $2 ~ /[0-9]/ ) { print $2 } }')
-		mitarPreis=$(echo "$nowPreis" | awk '{ if ( $3 ~ /[0-9]/ ) { print $3 } else { if ( $2 ~ /[0-9]/ ) { print $2 } } }')
-		fremdPreis=$(echo "$nowPreis" | awk '{ if ( $4 ~ /[0-9]/ ) { print $4 } else { if ( $3 ~ /[0-9]/ ) 
-							{ print $3 } else { if ( $2 ~ /[0-9]/ ) { print $2 } } } }')
-		nowText=$(echo "$2"  | awk "NR==$c" | tr '\r' ' ' | sed 's/ *$//g')
+		nowPreis=$(echo "$1" | awk "NR==$c")
+		studPreis=${nowPreis:4:4}
+		mitarPreis=${nowPreis:11:4}
+		if [ -z $mitarPreis ];
+		then
+			mitarPreis=$studPreis
+		fi
+		fremdPreis=${nowPreis:18:4}
+		if [ -z $fremdPreis ];
+		then
+			fremdPreis=$mitarPreis
+		fi
 		
-		nPreis=""
-		echo "$prPreise" | grep "S" > /dev/null && nPreis=$nPreis"$studPreis  "
-		echo "$prPreise" | grep "M" > /dev/null && nPreis=$nPreis"$mitarPreis  "
-		echo "$prPreise" | grep "F" > /dev/null && nPreis=$nPreis"$fremdPreis  "
-		
-		echo -n "€ $nPreis"
-		echo -ne "\033[$TERM_COL""D\033[$BIG_TAB""C" #set cursor
-		echo "$nowText"
+		nPreis=''
+		echo "$prPreise" | grep "S" > /dev/null && nPreis+="$studPreis  "
+		echo "$prPreise" | grep "M" > /dev/null && nPreis+="$mitarPreis  "
+		echo "$prPreise" | grep "F" > /dev/null && nPreis+="$fremdPreis  "
+		echo -ne "€ $nPreis\033[$TERM_COL""D\033[$BIG_TAB""C"
+		echo "$2"  | awk "NR==$c"
 	done
 }
 
 wget -T 10 -nv --no-cache --output-document="$tempFile" "$webSite" > /dev/null 2>&1 || exit 1
 
-content=$(sed -e 's/<[^>]\+>//g' "$tempFile" | sed -e 's/^ *//; s/ *$//; /^$/d' | uniq)
+content=$(grep -m 1 -A 400 -B 20 "Tagesübersicht" "$tempFile" | sed -e 's/<[^>]\+>//g' -e 's/^ *//' | uniq)
 
-datum=$(echo "$content" | grep "Tagesübersicht")
+datum=$(echo "$content" | grep -m 1 "Tagesübersicht")
 echo
 echo $datum
 
 for (( sec=1; sec<=$numberSection; sec++ ))
 do
-	del1=$(echo -e "$section" | awk "NR==$sec" | tr '\r' ' ' | sed 's/ *$//g')
+	del1=$(echo -e "$section" | awk "NR==$sec" )
 	echo "$print" | grep "$del1" > /dev/null || continue
 	echo
-	del2=$(echo -e "$section" | awk "NR==$((sec+1))" | tr '\r' ' ' | sed 's/ *$//g')
-	cC=$(echo "$content" | sed -e '1,/'$del1'/d' | sed -e '/'$del2'/,$d')
-
-	texte=$(echo "$cC" | grep -v "EUR" | sed -e 's/  \+[0-9]\+//g' | grep "   ")
-	preise=$(echo "$cC" | grep "EUR" | tr -d '/')
+	del2=$(echo -e "$section" | awk "NR==$((sec+1))")
+	cC=$(echo "$content" | sed -e '1,/'$del1'/d'  -e '/'$del2'/,$d')
+	texte=$(echo "$cC" | awk '0 == (NR+1) % 3' | sed -e 's/ *[0-9]\+  \+//g')
+	preise=$(echo "$cC" | awk '0 == NR % 3' | tr -d '\r')
 	anzahl=$(echo "$texte" | wc -l)
 	echo "$del1: ($anzahl)"
 	printSection "$preise" "$texte"
