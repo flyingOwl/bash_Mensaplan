@@ -101,7 +101,7 @@ for (( c=1; c<=$anzahl; c=c+2 ))
 }
 
 
-#wget -T 10 -nv --no-cache --output-document="$tempFile" "$webSite" > /dev/null 2>&1 || exit 1
+wget -T 10 -nv --no-cache --output-document="$tempFile" "$webSite" > /dev/null 2>&1 || exit 1
 
 content=$(grep -m 1 -A 400 "Tagesübersicht" "$tempFile") #| sed -e 's/<[^>]\+>//g' -e 's/^ *//' -e '/^$/d')
 
