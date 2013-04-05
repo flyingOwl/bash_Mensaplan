@@ -9,9 +9,10 @@ section="Salate\nAktionsstand\nEssen\nBeilagen\nDesserts\nKennzeichnungen"
 print=""
 prPreise="SMF"
 tePreise=""
+ampel=0
 
 if [ $# -ne 0 ] ; then
-while getopts AEBDSnp:h opt
+while getopts AEBDSncp:h opt
 	do
 	case "$opt" in
       		A) print=$print":Aktionsstand";;
@@ -20,6 +21,7 @@ while getopts AEBDSnp:h opt
 		D) print=$print":Desserts";;
 		S) print=$print":Salate";;
 		p) tePreise=$OPTARG;;
+		c) ampel=1;;
 		n) webSite=$webNext;;
 		h) 	echo -e "Usage:"
 			echo -e "\t[-A Nur Aktionsessen]"
@@ -29,6 +31,7 @@ while getopts AEBDSnp:h opt
 			echo -e "\t[-S Nur Salate]"
 			echo -e "\t[-p Preise: S = Student; M = Mitarbeiter; F = Fremde]"
 			echo -e	"\t[-n Plan für den nächsten Tag]"
+			echo -e	"\t[-c Ampelsymbol der Speisen farblich kennzeichnen]"
 			echo -e	"Beispiel: <Skript> -nAD -p SM"
 			echo -e	"\tPlan des nächsten Tages, nur Aktion+Desserts werden angezeigt und"
 			echo -e	"\tnur die Preise für Student und Mitarbeiter"; exit 0;;
@@ -52,8 +55,18 @@ fi
 numberSection=$(echo -e "$section" | wc -l)
 let numberSection--
 
+setColor(){
+	case "$1" in
+		"gruen")  echo -en "\e[0;32m";;
+		"orange") echo -en "\e[0;33m";;
+		"rot")    echo -en "\e[0;31m";;
+	esac
+
+}
+
 printSection(){
 echo "$del1: ($(($anzahl/2)))"
+let "f = 1"
 for (( c=1; c<$anzahl; c=c+2 ))
 	do
 		nowPreis=$(echo "$1" | awk "NR==$((c+1))")
@@ -82,8 +95,17 @@ for (( c=1; c<$anzahl; c=c+2 ))
 		then
 			nPreis+="$fremdPreis  "
 		fi
+		
 		echo -ne "€ $nPreis"
-		echo "$1"  | awk "NR==$c"
+		if [ "$ampel" -eq "1" ];
+		then
+			setColor $(echo "$farben" | awk "NR==$f")
+			let "f = f+1"
+			echo "$1"  | awk "NR==$c"
+			echo -en "\e[0m"
+		else
+			echo "$1"  | awk "NR==$c"
+		fi
 	done
 }
 
@@ -103,7 +125,11 @@ do
 	echo
 	del2=$(echo -e "$section" | awk "NR==$((sec+1))")
 	cC=$(sed -e '1,/.*'$del1'.*/d'  -e '/.*'$del2'.*/,$d' <<< "$content")
-	texte=$(sed -e 's/.*<\/a> *\([^<]\+\)<a href="#zus.*/\1/' -e 's/.*preis">\([^<]\+\)<\/td>.*/\1/' -e '/^ \+/d' <<< "$cC")
+	if [ "$ampel" -eq "1" ];
+	then
+		farben=$(sed -n '/ampel/s/.*#ampel_\([^"]\+\)">.*/\1/p' <<< "$cC")
+	fi
+	texte=$(sed -e 's/ *<[^>]*zusatz">[0-9]*<\/a>//g' -e 's/.*<\/a> *\([^<]\+\)<\/.*/\1/' -e 's/.*preis">\([^<]\+\)<\/td>.*/\1/' -e '/^ \+/d'  <<< "$cC")
 	anzahl=$(wc -l <<< "$texte")
 	printSection "$texte"
 done
