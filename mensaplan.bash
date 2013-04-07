@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# VERSION 1.0
 # Change this two lines for any other mensa powered by StudentenWerk 
 webSite="http://www.studentenwerk-berlin.de/mensen/speiseplan/beuth/index.html"
 webNext="http://www.studentenwerk-berlin.de/mensen/speiseplan/beuth/01.html"
@@ -11,7 +11,7 @@ prPreise="SMF"
 tePreise=""
 ampel=0
 
-if [ $# -ne 0 ] ; then
+if [ "$#" -ne 0 ] ; then
 while getopts AEBDSncp:h opt
 	do
 	case "$opt" in
@@ -20,9 +20,9 @@ while getopts AEBDSncp:h opt
 		B) print=$print":Beilagen";;
 		D) print=$print":Desserts";;
 		S) print=$print":Salate";;
-		p) tePreise=$OPTARG;;
+		p) tePreise="$OPTARG";;
 		c) ampel=1;;
-		n) webSite=$webNext;;
+		n) webSite="$webNext";;
 		h) 	echo -e "Usage:"
 			echo -e "\t[-A Nur Aktionsessen]"
 			echo -e	"\t[-E Nur \"normales\" Essen]"
@@ -43,12 +43,12 @@ mkdir -p "$(dirname "$tempFile")"
 
 if [ -z "$print" ];
 then
-	print=$section
+	print="$section"
 fi
 
 if [ ! -z "$tePreise" ];
 then
-	prPreise=$tePreise
+	prPreise="$tePreise"
 fi
 
 
