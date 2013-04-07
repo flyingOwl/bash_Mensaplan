@@ -108,12 +108,10 @@ for (( c=1; c<$anzahl; c=c+2 ))
 		fi
 	done
 }
-
 wget -T 10 -nv --no-cache --output-document="$tempFile" "$webSite" > /dev/null 2>&1 || exit 1
-content=$(grep -m 1 -A 400 "Tagesübersicht" "$tempFile")
-
+content=$(grep -m 1 -A 400 '<div class="mensa_day">' "$tempFile")
 echo
-grep -m 1 -o -E "Tagesübersicht [a-Z]*,[ .0-9]*" <<< "$content"
+grep -m 1 -o -E "Tagesübersicht [a-Z]*,[ .0-9]*" "$tempFile"
 
 for (( sec=1; sec<=$numberSection; sec++ ))
 do
@@ -129,7 +127,8 @@ do
 	then
 		farben=$(sed -n '/ampel/s/.*#ampel_\([^"]\+\)">.*/\1/p' <<< "$cC")
 	fi
-	texte=$(sed -e 's/ *<[^>]*zusatz">[0-9]*<\/a>//g' -e 's/.*<\/a> *\([^<]\+\)<\/.*/\1/' -e 's/.*preis">\([^<]\+\)<\/td>.*/\1/' -e '/^ \+/d'  <<< "$cC")
+	texte=$(sed -n -e '/zusatz/s/ *<[^>]*zusatz">[0-9]*<\/a>//g' -e 's/.*<\/a> *\([^<]\+\)<\/td>.*/\1/p' -e 's/.*preis">\([^<]\+\)<\/td>.*/\1/p' <<< "$cC")
+	## note: first remove all tags with "zusatz", then parse the meal description, then parse the price
 	anzahl=$(wc -l <<< "$texte")
 	printSection "$texte"
 done
