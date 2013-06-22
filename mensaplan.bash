@@ -1,50 +1,32 @@
 #!/bin/bash
-# VERSION 1.0
+# VERSION 1.1
 # Change this two lines for any other mensa powered by StudentenWerk 
 webSite="http://www.studentenwerk-berlin.de/mensen/speiseplan/beuth/index.html"
 webNext="http://www.studentenwerk-berlin.de/mensen/speiseplan/beuth/01.html"
 
 tempFile="/tmp/mensaplan.temp"
-section="Salate\nAktionsstand\nEssen\nBeilagen\nDesserts\nKennzeichnungen"
-print=""
 prPreise="SMF"
 tePreise=""
 ampel=0
 
 if [ "$#" -ne 0 ] ; then
-while getopts AEBDSncp:h opt
+while getopts ncp:h opt
 	do
 	case "$opt" in
-      		A) print=$print":Aktionsstand";;
-		E) print=$print":Essen";;
-		B) print=$print":Beilagen";;
-		D) print=$print":Desserts";;
-		S) print=$print":Salate";;
 		p) tePreise="$OPTARG";;
 		c) ampel=1;;
 		n) webSite="$webNext";;
 		h) 	echo -e "Usage:"
-			echo -e "\t[-A Nur Aktionsessen]"
-			echo -e	"\t[-E Nur \"normales\" Essen]"
-			echo -e	"\t[-B Nur Beilagen]"
-			echo -e	"\t[-D Nur Desserts]"
-			echo -e "\t[-S Nur Salate]"
 			echo -e "\t[-p Preise: S = Student; M = Mitarbeiter; F = Fremde]"
 			echo -e	"\t[-n Plan für den nächsten Tag]"
 			echo -e	"\t[-c Ampelsymbol der Speisen farblich kennzeichnen]"
-			echo -e	"Beispiel: <Skript> -nAD -p SM"
-			echo -e	"\tPlan des nächsten Tages, nur Aktion+Desserts werden angezeigt und"
-			echo -e	"\tnur die Preise für Student und Mitarbeiter"; exit 0;;
+			echo -e	"Beispiel: $0 -n -p SM"
+			echo -e	"\tPlan des nächsten Tages wird mit Preisen für Studenten und Mitarbeiter angezeigt"; exit 0;;
   	esac
 done
 fi
 
 mkdir -p "$(dirname "$tempFile")"
-
-if [ -z "$print" ];
-then
-	print="$section"
-fi
 
 if [ ! -z "$tePreise" ];
 then
@@ -52,8 +34,6 @@ then
 fi
 
 
-numberSection=$(echo -e "$section" | wc -l)
-let numberSection--
 
 setColor(){
 	case "$1" in
@@ -108,19 +88,20 @@ for (( c=1; c<$anzahl; c=c+2 ))
 		fi
 	done
 }
+
 wget -T 10 -nv --no-cache --output-document="$tempFile" "$webSite" > /dev/null 2>&1 || exit 1
 content=$(grep -m 1 -A 400 '<div class="mensa_day">' "$tempFile")
 echo
 grep -m 1 -o -E "Tagesübersicht [a-Z]*,[ .0-9]*" "$tempFile"
 
-for (( sec=1; sec<=$numberSection; sec++ ))
+## Parse all sections ##
+section=$(sed -ne'/mensa_day_title/s/.*>\([^<]*\)<.*/\1/p' <<< "$content")
+numSections=$(wc -l <<< "$section")
+
+for (( sec=1; sec<$numSections; sec++ ))
 do
+    echo
 	del1=$(echo -e "$section" | awk "NR==$sec" )
-	if [[ "$print" != *"$del1"* ]]
-	then
-		continue
-	fi
-	echo
 	del2=$(echo -e "$section" | awk "NR==$((sec+1))")
 	cC=$(sed -e '1,/.*'$del1'.*/d'  -e '/.*'$del2'.*/,$d' <<< "$content")
 	if [ "$ampel" -eq "1" ];
@@ -130,6 +111,7 @@ do
 	texte=$(sed -n -e '/zusatz/s/ *<[^>]*zusatz">[0-9]*<\/a>//g' -e 's/.*<\/a> *\([^<]\+\)<\/td>.*/\1/p' -e 's/.*preis">\([^<]\+\)<\/td>.*/\1/p' <<< "$cC")
 	## note: first remove all tags with "zusatz", then parse the meal description, then parse the price
 	anzahl=$(wc -l <<< "$texte")
+	texte=$(sed 's/\ *$//g' <<< "$texte")
 	printSection "$texte"
 done
 echo
