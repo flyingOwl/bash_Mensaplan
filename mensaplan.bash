@@ -108,7 +108,7 @@ do
 	then
 		farben=$(sed -n '/ampel/s/.*#ampel_\([^"]\+\)">.*/\1/p' <<< "$cC")
 	fi
-	texte=$(sed -n -e '/zusatz/s/ *<[^>]*zusatz">[0-9a]*<\/a>//g' -e 's/.*<\/a> *\([^<]\+\)<\/td>.*/\1/p' -e 's/.*preis">\([^<]\+\)<\/td>.*/\1/p' <<< "$cC")
+	texte=$(sed -n -e '/zusatz/s/ *<[^>]*zusatz">[0-9a-z]*<\/a>//g' -e 's/.*<\/a> *\([^<]\+\)<\/td>.*/\1/p' -e 's/.*preis">\([^<]\+\)<\/td>.*/\1/p' <<< "$cC")
 	## note: first remove all tags with "zusatz", then parse the meal description, then parse the price
 	anzahl=$(wc -l <<< "$texte")
 	texte=$(sed 's/\ *$//g' <<< "$texte")
